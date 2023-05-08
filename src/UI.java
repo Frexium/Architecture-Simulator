@@ -1,17 +1,17 @@
 import javax.swing.*;
 import java.awt.*;
+import java.awt.List;
+import java.awt.event.*;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public class UI extends Frame{
     Map<String, Integer> variables = new HashMap<>();
     Map<String, Integer> registers = new HashMap<>();
     java.util.List<String> lines = new ArrayList<>();
+    Stack<Integer> stack = new Stack<>();
 
     static int counter;
     JButton loadFile = new JButton("Load file");
@@ -26,7 +26,7 @@ public class UI extends Frame{
     Label fileStatus = new Label("File status : ");
     Label statusValue = new Label("status");
     Label variablesLabel = new Label("Variable");
-    Label stack = new Label("Stack");
+    Label stackLabel = new Label("Stack");
     Label code = new Label("Code");
     Label registersLabel = new Label("Registers");
     Label t0 = new Label("T0 : ");
@@ -56,7 +56,7 @@ public class UI extends Frame{
         fileStatus.setBounds(30,105,100,25);
         statusValue.setBounds(130,105,100,25);
         variablesLabel.setBounds(358,40,100,25);
-        stack.setBounds(358,173,100,25);
+        stackLabel.setBounds(358,173,100,25);
         code.setBounds(30,133,100,25);
         registersLabel.setBounds(30,280,100,25);
         t0.setBounds(103,310,100,25);
@@ -88,7 +88,7 @@ public class UI extends Frame{
         f.add(fileStatus);
         f.add(statusValue);
         f.add(variablesLabel);
-        f.add(stack);
+        f.add(stackLabel);
         f.add(code);
         f.add(registersLabel);
         f.add(t0);
@@ -127,6 +127,7 @@ public class UI extends Frame{
             button.setEnabled(true);
         });
         simulate.addActionListener(e -> {
+            stack.clear();
             try {
                 readFile();
             } catch (IOException ex) {
@@ -184,6 +185,12 @@ public class UI extends Frame{
                 counter -= 1;
             }
             statusValue.setText("Stopped");
+        });
+        f.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                // Exit the program
+                System.exit(0);
+            }
         });
     }
 
@@ -431,20 +438,24 @@ public class UI extends Frame{
                 break;
             case("PUSH"):
                 if(isRegister0){
-                    stackList.add(String.valueOf(registers.get(data[0])));
+                    stack.push(registers.get(data[0]));
+                    updateValues();
                     break;
                 }else if(isInteger(data[0])){
-                    stackList.add(data[0]);
+                    assert data[0] != null;
+                    stack.push(Integer.valueOf(data[0]));
+                    updateValues();
                     break;
                 }else{
-                    stackList.add(String.valueOf(variables.get(data[0])));
+                    stack.push(variables.get(data[0]));
+                    updateValues();
                     break;
                 }
             case("POP"):
                 if(isRegister0){
                     int lastOne = stackList.getItemCount();
                     registers.put(data[0], Integer.valueOf(stackList.getItem(lastOne - 1)));
-                    stackList.remove(lastOne - 1);
+                    stack.pop();
                     updateValues();
                 }
                 break;
@@ -457,14 +468,14 @@ public class UI extends Frame{
                 break;
             case("INC"):
                 if(isRegister0){
-                    registers.put(data[0], +1);
+                    registers.put(data[0],registers.get(data[0]) + 1);
                     updateValues();
                     break;
                 }
                 break;
             case("DEC"):
                 if(isRegister0){
-                    registers.put(data[0], -1);
+                    registers.put(data[0],registers.get(data[0]) -1);
                     updateValues();
                     break;
                 }
@@ -485,7 +496,7 @@ public class UI extends Frame{
                         if(registers.get(data[0]).equals(registers.get(data[1]))){
                             int a = lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = a;
                                 }else{
                                     a -= 1;
@@ -497,7 +508,7 @@ public class UI extends Frame{
                         if(registers.get(data[0]).equals(variables.get(data[1]))){
                             int b = lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = b;
                                 }else{
                                     b -= 1;
@@ -510,7 +521,7 @@ public class UI extends Frame{
                         if(registers.get(data[0]).equals(Integer.parseInt(data[1]))){
                             int c = lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = c;
                                 }else{
                                     c -= 1;
@@ -524,7 +535,7 @@ public class UI extends Frame{
                         if(variables.get(data[0]).equals(registers.get(data[1]))){
                             int d =lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = d;
                                 }else{
                                     d -= 1;
@@ -536,7 +547,7 @@ public class UI extends Frame{
                         if(variables.get(data[0]).equals(variables.get(data[1]))){
                             int e =lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = e;
                                 }else{
                                     e -= 1;
@@ -549,7 +560,7 @@ public class UI extends Frame{
                         if(variables.get(data[0]).equals(Integer.parseInt(data[1]))){
                             int f =lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = f;
                                 }else{
                                     f -= 1;
@@ -564,7 +575,7 @@ public class UI extends Frame{
                         if(Integer.parseInt(data[0]) == (registers.get(data[1]))){
                             int g=lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = g;
                                 }else{
                                     g -= 1;
@@ -577,7 +588,7 @@ public class UI extends Frame{
                         if(Integer.parseInt(data[0]) == (variables.get(data[1]))){
                             int f=lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = f;
                                 }else{
                                     f -= 1;
@@ -591,7 +602,7 @@ public class UI extends Frame{
                         if(Integer.parseInt(data[0]) == (Integer.parseInt(data[1]))){
                             int g=lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = g;
                                 }else{
                                     g -= 1;
@@ -608,7 +619,7 @@ public class UI extends Frame{
                         if(!registers.get(data[0]).equals(registers.get(data[1]))){
                             int h=lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = h;
                                 }else{
                                     h -= 1;
@@ -620,7 +631,7 @@ public class UI extends Frame{
                         if(!registers.get(data[0]).equals(variables.get(data[1]))){
                             int j=lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = j;
                                 }else{
                                     j -= 1;
@@ -633,7 +644,7 @@ public class UI extends Frame{
                         if(!registers.get(data[0]).equals(Integer.parseInt(data[1]))){
                             int k=lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = k;
                                 }else{
                                     k -= 1;
@@ -647,7 +658,7 @@ public class UI extends Frame{
                         if(!variables.get(data[0]).equals(registers.get(data[1]))){
                             int m=lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = m;
                                 }else{
                                     m -= 1;
@@ -659,7 +670,7 @@ public class UI extends Frame{
                         if(!variables.get(data[0]).equals(variables.get(data[1]))){
                             int n =lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = n;
                                 }else{
                                     n -= 1;
@@ -672,7 +683,7 @@ public class UI extends Frame{
                         if(!variables.get(data[0]).equals(Integer.parseInt(data[1]))){
                             int o=lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = o;
                                 }else{
                                     o -= 1;
@@ -687,7 +698,7 @@ public class UI extends Frame{
                         if(Integer.parseInt(data[0]) != (registers.get(data[1]))){
                             int p=lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = p;
                                 }else{
                                     p -= 1;
@@ -700,7 +711,7 @@ public class UI extends Frame{
                         if(Integer.parseInt(data[0]) != (variables.get(data[1]))){
                             int i2=lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = i2;
                                 }else{
                                     i2 -= 1;
@@ -714,7 +725,7 @@ public class UI extends Frame{
                         if(Integer.parseInt(data[0]) != (Integer.parseInt(data[1]))){
                             int i3=lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = i3;
                                 }else{
                                     i3 -= 1;
@@ -731,7 +742,7 @@ public class UI extends Frame{
                         if(registers.get(data[0]) > (registers.get(data[1]))){
                             int i4=lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = i4;
                                 }else{
                                     i4 -= 1;
@@ -743,7 +754,7 @@ public class UI extends Frame{
                         if(registers.get(data[0]) > (variables.get(data[1]))){
                             int i5=lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = i5;
                                 }else{
                                     i5 -= 1;
@@ -756,7 +767,7 @@ public class UI extends Frame{
                         if(registers.get(data[0]) > (Integer.parseInt(data[1]))){
                             int i6=lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = i6;
                                 }else{
                                     i6 -= 1;
@@ -770,7 +781,7 @@ public class UI extends Frame{
                         if(variables.get(data[0]) > (registers.get(data[1]))){
                             int i7=lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = i7;
                                 }else{
                                     i7 -= 1;
@@ -782,7 +793,7 @@ public class UI extends Frame{
                         if(variables.get(data[0]) > (variables.get(data[1]))){
                             int i8=lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = i8;
                                 }else{
                                     i8 -= 1;
@@ -795,7 +806,7 @@ public class UI extends Frame{
                         if(variables.get(data[0]) > (Integer.parseInt(data[1]))){
                             int i9=lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = i9;
                                 }else{
                                     i9 -= 1;
@@ -810,7 +821,7 @@ public class UI extends Frame{
                         if(Integer.parseInt(data[0]) > (registers.get(data[1]))){
                             int j1=lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = j1;
                                 }else{
                                     j1 -= 1;
@@ -823,7 +834,7 @@ public class UI extends Frame{
                         if(Integer.parseInt(data[0]) > (variables.get(data[1]))){
                             int j2=lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = j2;
                                 }else{
                                     j2 -= 1;
@@ -837,7 +848,7 @@ public class UI extends Frame{
                         if(Integer.parseInt(data[0]) > (Integer.parseInt(data[1]))){
                             int j3=lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = j3;
                                 }else{
                                     j3 -= 1;
@@ -854,7 +865,7 @@ public class UI extends Frame{
                         if(registers.get(data[0]) < (registers.get(data[1]))){
                             int j4=lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = j4;
                                 }else{
                                     j4 -= 1;
@@ -866,7 +877,7 @@ public class UI extends Frame{
                         if(registers.get(data[0]) < (variables.get(data[1]))){
                             int j5=lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = j5;
                                 }else{
                                     j5 -= 1;
@@ -879,7 +890,7 @@ public class UI extends Frame{
                         if(registers.get(data[0]) < (Integer.parseInt(data[1]))){
                             int j6=lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = j6;
                                 }else{
                                     j6 -= 1;
@@ -893,7 +904,7 @@ public class UI extends Frame{
                         if(variables.get(data[0]) < (registers.get(data[1]))){
                             int j7=lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = j7;
                                 }else{
                                     j7 -= 1;
@@ -905,7 +916,7 @@ public class UI extends Frame{
                         if(variables.get(data[0]) < (variables.get(data[1]))){
                             int j8=lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = j8;
                                 }else{
                                     j8 -= 1;
@@ -918,7 +929,7 @@ public class UI extends Frame{
                         if(variables.get(data[0]) < (Integer.parseInt(data[1]))){
                             int j9=lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = j9;
                                 }else{
                                     j9 -= 1;
@@ -933,7 +944,7 @@ public class UI extends Frame{
                         if(Integer.parseInt(data[0]) < (registers.get(data[1]))){
                             int a1=lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = a1;
                                 }else{
                                     a1 -= 1;
@@ -946,7 +957,7 @@ public class UI extends Frame{
                         if(Integer.parseInt(data[0]) < (variables.get(data[1]))){
                             int a2=lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = a2;
                                 }else{
                                     a2 -= 1;
@@ -960,7 +971,7 @@ public class UI extends Frame{
                         if(Integer.parseInt(data[0]) < (Integer.parseInt(data[1]))){
                             int a3=lines.size();
                             for(String line : lines){
-                                if(Objects.equals(line, data[0])){
+                                if(Objects.equals(line, data[2])){
                                     counter = a3;
                                 }else{
                                     a3 -= 1;
@@ -997,10 +1008,14 @@ public class UI extends Frame{
         t2Value.setText(String.valueOf(registers.get("T2")));
         t3Value.setText(String.valueOf(registers.get("T3")));
         variableList.removeAll();
+        stackList.removeAll();
         for(Map.Entry<String, Integer> entry : variables.entrySet()){
             String key = entry.getKey();
             String value = String.valueOf(entry.getValue());
             variableList.add(key + " = " + value);
+        }
+        for(int i:stack){
+            stackList.add(String.valueOf(i));
         }
     }
 }
