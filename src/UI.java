@@ -15,8 +15,8 @@ public class UI extends Frame{
 
     static int counter;
     JButton loadFile = new JButton("Load file");
-    JButton button = new JButton();
-    JButton simulate = new JButton("Simulate");
+    JButton button = new JButton("Simulate");
+    JButton simulate = new JButton("Simulate by steps");
     JButton stopSim = new JButton("Stop simulation");
     JButton next = new JButton("Next");
 
@@ -37,6 +37,8 @@ public class UI extends Frame{
     Label t1Value = new Label("0");
     Label t2Value = new Label("0");
     Label t3Value = new Label("0");
+    Label line = new Label("Line");
+    Label lineValue = new Label("");
 
     List codeList = new List();
     List variableList = new List();
@@ -55,16 +57,18 @@ public class UI extends Frame{
         statusValue.setBounds(130,105,100,25);
         variablesLabel.setBounds(358,40,100,25);
         stack.setBounds(358,173,100,25);
-        code.setBounds(66,133,100,25);
-        registersLabel.setBounds(92,249,100,25);
-        t0.setBounds(103,288,100,25);
-        t1.setBounds(103,317,100,25);
-        t2.setBounds(103,345,100,25);
-        t3.setBounds(103,374,100,25);
-        t0Value.setBounds(202,287,100,25);
-        t1Value.setBounds(202,316,100,25);
-        t2Value.setBounds(202,344,100,25);
-        t3Value.setBounds(202,373,100,25);
+        code.setBounds(30,133,100,25);
+        registersLabel.setBounds(30,280,100,25);
+        t0.setBounds(103,310,100,25);
+        t1.setBounds(103,340,100,25);
+        t2.setBounds(103,370,100,25);
+        t3.setBounds(103,400,100,25);
+        t0Value.setBounds(202,310,100,25);
+        t1Value.setBounds(202,340,100,25);
+        t2Value.setBounds(202,370,100,25);
+        t3Value.setBounds(202,400,100,25);
+        line.setBounds(30, 240, 100, 25);
+        lineValue.setBounds(130, 240, 200,25);
 
         codeList.setBounds(29,160,274,78);
         variableList.setBounds(353,70,200,100);
@@ -95,6 +99,8 @@ public class UI extends Frame{
         f.add(t1Value);
         f.add(t2Value);
         f.add(t3Value);
+        f.add(line);
+        f.add(lineValue);
 
         f.add(codeList);
         f.add(variableList);
@@ -102,6 +108,9 @@ public class UI extends Frame{
 
         next.setVisible(false);
         next.setEnabled(false);
+        stopSim.setEnabled(false);
+        simulate.setEnabled(false);
+        button.setEnabled(false);
 
         f.setSize(600,450);
         f.setLayout(null);
@@ -114,6 +123,8 @@ public class UI extends Frame{
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
             }
+            simulate.setEnabled(true);
+            button.setEnabled(true);
         });
         simulate.addActionListener(e -> {
             try {
@@ -128,6 +139,7 @@ public class UI extends Frame{
             counter = codeList.getItemCount();
             try {
                 read(codeList.getItem(0));
+                lineValue.setText(codeList.getItem(0));
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
             }
@@ -138,6 +150,7 @@ public class UI extends Frame{
             if(counter >= 0){
                 try {
                     read(codeList.getItem(codeList.getItemCount() - counter));
+                    lineValue.setText(codeList.getItem(codeList.getItemCount() - counter));
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
                 }
@@ -153,12 +166,30 @@ public class UI extends Frame{
             counter = codeList.getItemCount();
             next.setVisible(false);
             next.setEnabled(false);
+            lineValue.setText("");
+            stopSim.setEnabled(false);
+        });
+        button.addActionListener(e -> {
+            statusValue.setText("Running...");
+            counter = codeList.getItemCount();
+            codeList.select(codeList.getItemCount() - 1);
+            while(counter > 0){
+                try {
+                    read(codeList.getItem(codeList.getItemCount() - counter));
+                    lineValue.setText(codeList.getItem(codeList.getItemCount() - counter));
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+                counter -= 1;
+            }
+            statusValue.setText("Stopped");
         });
     }
 
     public void readFile() throws IOException {
         codeList.removeAll();
         variableList.removeAll();
+        stackList.removeAll();
         registers.clear();
         registers.put("T0", 0);
         registers.put("T1", 0);
@@ -398,10 +429,20 @@ public class UI extends Frame{
                 }
                 break;
             case("PUSH"):
-                //have to make the stack for this one
+                if(isRegister0){
+                    stackList.add(String.valueOf(registers.get(data[0])));
+                    break;
+                }else if(isInteger(data[0])){
+                    stackList.add(data[0]);
+                    break;
+                }else{
+                    stackList.add(String.valueOf(variables.get(data[0])));
+                    break;
+                }
             case("POP"):
                 if(isRegister0){
-                    //have to make the stack, but in the end move the top of the stack value to data[0]
+                    int lastOne = stackList.getItemCount();
+                    registers.put(data[0], Integer.valueOf(stackList.getItem(lastOne)));
                 }
                 break;
             case("NOT"):
@@ -932,6 +973,7 @@ public class UI extends Frame{
                 next.setEnabled(false);
                 next.setVisible(false);
                 statusValue.setText("Stopped");
+                lineValue.setText("");
                 break;
         }
     }
