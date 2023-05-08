@@ -13,13 +13,12 @@ const. Memory regions loads (load into a variable, for instance) are NOT ALLOWED
 Store in the memory position referred by var the value of register reg or a constant const.
 Register stores (store into register t0, for instance) are NOT ALLOWED.
   
-3. ~~**PUSH reg/var/const :**
-Push to the top of the stack the contents of reg or var or a constant const~~
-        *(Doesn't work since there is no implementation of the stack)*
+3. **PUSH reg/var/const :**
+Push to the top of the stack the contents of reg or var or a constant const
   
-4. ~~**POP reg :**
+4. **POP reg :**
 Pop from the top of the stack and store the value on reg. Storing in a memory region is NOT
-ALLOWED.~~ *(Also doesn't work for the same reasons)*
+ALLOWED.
   
 5. **AND reg1 reg2/var/const :**
 Performs a logical AND operation between reg1 and a register reg2, a variable var or a constant
