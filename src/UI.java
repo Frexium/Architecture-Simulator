@@ -170,6 +170,7 @@ public class UI extends Frame{
             stopSim.setEnabled(false);
         });
         button.addActionListener(e -> {
+            stackList.removeAll();
             statusValue.setText("Running...");
             counter = codeList.getItemCount();
             codeList.select(codeList.getItemCount() - 1);
@@ -442,7 +443,9 @@ public class UI extends Frame{
             case("POP"):
                 if(isRegister0){
                     int lastOne = stackList.getItemCount();
-                    registers.put(data[0], Integer.valueOf(stackList.getItem(lastOne)));
+                    registers.put(data[0], Integer.valueOf(stackList.getItem(lastOne - 1)));
+                    stackList.remove(lastOne - 1);
+                    updateValues();
                 }
                 break;
             case("NOT"):
